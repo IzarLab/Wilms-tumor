@@ -370,8 +370,4 @@ Intermediate processed objects generated during one analysis can be reused by su
 
 # Citation
 
-If you use this code, please cite:
-
-Tagore S. et al.
-Developmental Plasticity Shapes Cellular State Transitions in Wilms Tumor.
-(Manuscript in preparation)
+To be updated.
