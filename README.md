@@ -68,7 +68,7 @@ Additional metadata tables include
 - FGA_TMB.tsv
 - clinical metadata
 - Numbat CNV outputs
-- wmNMF outputs
+- wmNMF outputs (optional)
 
 ---
 
