@@ -69,7 +69,7 @@ for(m_ in unique(progs_table$program))
   
   ## step 1.4: calculating weights of top genes for program m_ ####
   
-  ws_ = sapply(X = names(genes_), FUN = function(g_){ mean(ws_[names(ws_) %in% g_]) })      # weights of top genes for program m_); there could be multiple
+  ws_ = sapply(X = names(genes_), FUN = function(g_){ mean(ws_[names(ws_) %in% g_]) })      # weights of top genes for program m_; there could be multiple
                                                                                             # weights for a gene if it is a top contributor to multiple
                                                                                             # factors of program m_
   ## step 1.5: ranking top genes based on frequency and weight for program m_ ####
@@ -84,14 +84,14 @@ for(m_ in unique(progs_table$program))
 }
 genes_annot = do.call(genes_annot, what = rbind)
 
-# STEP 2: Computing top genes' expressions ####
+# STEP 2: Computing top gene expressions ####
 
 ## step 2.1: reading in cancer integrated data ####
 
 load('data/compartments/integrated_compartment_cancer_processed.RData')
 DefaultAssay(s_objs) = 'RNA'
 
-## step 2.2: average expression of each contributing gene in each program across all cells ####
+## step 2.2: average expression of each contributing gene in each program across expressing cells of the program's cell type ####
 
 genes_annot$expressions = NA
 
@@ -108,7 +108,8 @@ for(m_ in unique(progs_))      # for each program
   idx_ = progs_ %in% m_
   genes_ = genes_annot$markers[idx_]
   cells_ = colnames(s_objs)[s_objs$cell_type %in% m_]
-  genes_annot$expressions[idx_] = rowMeans(s_objs[['RNA']]@data[genes_,cells_, drop = F])
+  x_ = s_objs[['RNA']]@data[genes_,cells_, drop = F]
+  genes_annot$expressions[idx_] = Matrix::rowSums(x_)/pmax(Matrix::rowSums(x_ > 0), 1)     # 0 if no cell expresses the gene
 }
 
 # STEP3: Plotting ####
@@ -127,16 +128,23 @@ plot_df$row_id = factor(paste(plot_df$program, plot_df$markers, sep = '|'),    #
 
 ## step 3.2: dot plot (gradient = expression, size = NMF weight) ####
 
+# setting the color breaks
+rng_ = range(plot_df$expressions)
+breaks_ = round(seq(from = rng_[1], to = rng_[2], length.out = 4),2)
+plot_df$expressions[plot_df$expressions %in% rng_[1]] = breaks_[1]
+plot_df$expressions[plot_df$expressions %in% rng_[2]] = breaks_[4]
+
+# plotting
 p_ =  ggplot(plot_df, aes(x = mp, y = row_id, color = expressions, size = weights))+
-      geom_point()+
-      scale_color_gradient(low = 'grey90', high = 'black', name = 'Mean\nexpression')+
-      scale_size(range = c(1, 5), name = 'NMF W\nweight')+
-      scale_y_discrete(labels = setNames(plot_df$markers, plot_df$row_id))+
-      labs(title = 'Top 5 markers per program', x = NULL, y = 'Marker genes ordered by program block')+
       theme_bw()+
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
             axis.text.y = element_text(face = 'italic', size = 8),
-            panel.grid.minor = element_blank())
+            panel.grid.minor = element_blank())+
+      geom_point()+
+      scale_color_gradientn(colors = c('grey89','blue','red'), name = 'Mean expression in\nexpressing cells', breaks = breaks_)+
+      scale_size(range = c(1, 5), name = 'NMF W\nweight')+
+      scale_y_discrete(labels = setNames(plot_df$markers, plot_df$row_id))+
+      labs(title = 'Top 5 markers per program', x = NULL, y = 'Marker genes ordered by program block')
 
 ## step 3.3: program key (MP number -> annotated program) ####
 
@@ -167,7 +175,7 @@ fetal_cell_type = unique(meta_dt$denovo_cell_type)                              
 fetal_cell_type = fetal_cell_type[!grepl(fetal_cell_type, pattern = 'UB')]                  # removing ureteric bud cells from the analysis since they are not part of the nephron lineage.
 fetal_cell_type = fetal_cell_type[!grepl(fetal_cell_type, pattern = '^Proliferating')]      # removing mitotic fetal cell types (cell-cycle signal is not lineage-specific)
 genes_annot = genes_annot[!grepl(genes_annot$program, pattern = '^(S|G2M) '),]              # removing mitotic NMF programs (S blastema 1, G2M blastema 1)
-genes_annot[, paste0(fetal_cell_type,'_expr')] = NA                                         # average expression of each contributing gene in each NMF program across all fetal cell types
+genes_annot[, paste0(fetal_cell_type,'_expr')] = NA                                         # average expression of each contributing gene in each NMF program across expressing cells of each fetal cell type
 genes_annot[, paste0(fetal_cell_type,'_pct')] = NA                                          # percentage of cells expressing each contributing gene in each NMF program across all fetal cell types
 for(m_ in unique(genes_annot$program))                                                      # for each NMF program
 {
@@ -177,7 +185,8 @@ for(m_ in unique(genes_annot$program))                                          
   for(ct_ in fetal_cell_type)
   {
     cells_ = rownames(meta_dt)[meta_dt$denovo_cell_type %in% ct_]
-    genes_annot[idx_, paste0(ct_,'_expr')] = rowMeans(fetal_mat[genes_, cells_, drop = F])
+    x_ = fetal_mat[genes_, cells_, drop = F]
+    genes_annot[idx_, paste0(ct_,'_expr')] = rowSums(x_)/pmax(rowSums(x_ > 0), 1)     # 0 if no cell expresses the gene
     genes_annot[idx_, paste0(ct_,'_pct')] = rowSums(fetal_mat[genes_, cells_, drop = F] > 0)/length(cells_)
   }
 }
@@ -186,82 +195,73 @@ for(m_ in unique(genes_annot$program))                                          
 
 ## step 5.1: grouping fetal cell types (columns of the plot) ####
 
-ct_groups = c('Cap mesenchyme'         = 'Cap mesenchyme',
-              'Proximal renal vesicle' = 'Nephron epithelial differentiation',
-              'Distal renal vesicle'   = 'Nephron epithelial differentiation',
-              'Proximal S shaped body' = 'Nephron epithelial differentiation',
-              'Medial S shaped body'   = 'Nephron epithelial differentiation',
-              'Distal S shaped body'   = 'Nephron epithelial differentiation',
-              'Podocyte'               = 'Nephron epithelial differentiation',
-              'Proximal tubule'        = 'Nephron epithelial differentiation',
-              'Loop of Henle'          = 'Nephron epithelial differentiation',
-              'Stroma progenitor'      = 'Stromal / muscle differentiation',
-              'Fibroblast'             = 'Stromal / muscle differentiation',
-              'Mesangial'              = 'Stromal / muscle differentiation',
-              'Myofibroblast'          = 'Stromal / muscle differentiation',
-              'Smooth muscle'          = 'Stromal / muscle differentiation')
+ct_groups = c('Cap mesenchyme'         = 'Blastema',
+              'Proximal renal vesicle' = 'Early nephron epithelium',
+              'Distal renal vesicle'   = 'Early nephron epithelium',
+              'Proximal S shaped body' = 'Early nephron epithelium',
+              'Medial S shaped body'   = 'Early nephron epithelium',
+              'Distal S shaped body'   = 'Early nephron epithelium',
+              'Podocyte'               = 'Early nephron epithelium',
+              'Proximal tubule'        = 'Early nephron epithelium',
+              'Loop of Henle'          = 'Early nephron epithelium',
+              'Stroma progenitor'      = 'Stroma',
+              'Fibroblast'             = 'Stroma',
+              'Mesangial'              = 'Stroma',
+              'Myofibroblast'          = 'Stroma',
+              'Smooth muscle'          = 'Stroma')
 ct_groups = ct_groups[names(ct_groups) %in% fetal_cell_type]       # only cell types kept in step 4
 stopifnot(all(fetal_cell_type %in% names(ct_groups)))               # every fetal cell type must be assigned to a group
 
 ## step 5.2: reshaping step 4 results to long format (one row per program, marker and fetal cell type) ####
 
-fetal_dt = do.call(rbind, lapply(names(ct_groups), function(ct_){
-  data.frame(program = genes_annot$program, markers = genes_annot$markers, cell_type = ct_,
-             expr = genes_annot[[paste0(ct_,'_expr')]], pct = genes_annot[[paste0(ct_,'_pct')]])
-}))
+tmp_ = lapply(names(ct_groups), function(ct_)
+                                {
+                                  data.frame(program = genes_annot$program,
+                                             markers = genes_annot$markers,
+                                             cell_type = ct_,
+                                             expr = genes_annot[[paste0(ct_,'_expr')]],
+                                             pct = genes_annot[[paste0(ct_,'_pct')]])
+                                })
+genes_dt = do.call(what = rbind, args = tmp_)
 
-## step 5.3: normalizing expression of each gene to [0,1] across fetal cell types (row-wise) ####
+## step 5.3: average expression of each program's 5 genes for each fetal cell type and best-matching fetal cell type of each program ####
 
-fetal_dt = fetal_dt %>%
-  group_by(program, markers) %>%
-  mutate(norm_expr = if(max(expr) > min(expr)){ (expr - min(expr))/(max(expr) - min(expr)) }else{ 0 }) %>%     # 1 = fetal cell type with the highest expression of the gene
-  ungroup() %>%
-  as.data.frame()
+genes_dt =  genes_dt %>%
+            group_by(program, cell_type) %>%
+            mutate(average = mean(expr)) %>%          # one value per program and fetal cell type
+            group_by(program) %>%
+            mutate(best = average == max(average)) %>%
+            ungroup() %>%
+            as.data.frame()
 
-## step 5.4: adding the average expression of each program's 5 genes for each fetal cell type ####
-
-avg_dt = fetal_dt %>%
-  group_by(program, cell_type) %>%
-  summarise(expr = mean(expr), pct = mean(pct), .groups = 'drop') %>%     # average of the raw expressions of the 5 genes; dot size is their mean % of cells
-  group_by(program) %>%
-  mutate(norm_expr = (expr - min(expr))/(max(expr) - min(expr)),          # scaling the average to [0,1] across fetal cell types (does not change its ranking)
-         best = expr == max(expr)) %>%                                    # best-matching fetal cell type of each program
-  ungroup() %>%
-  mutate(markers = 'Average') %>%
-  as.data.frame()
-
-fetal_dt$row_type = 'gene'
-fetal_dt$best = FALSE
-avg_dt$row_type = 'average'
-fetal_dt = rbind(fetal_dt, avg_dt[, names(fetal_dt)])
-
-## step 5.5: ordering rows (programs as in step 3; genes top to bottom followed by the average) and columns ####
+## step 5.4: ordering rows (programs as in step 3; genes top to bottom followed by the average) and columns ####
 
 progs_ = unique(genes_annot$program)
 row_levels = unlist(lapply(progs_, function(m_){ paste(m_, c('Average', rev(genes_annot$markers[genes_annot$program %in% m_])), sep = '|') }))     # bottom to top within each program
-fetal_dt$row_id = factor(paste(fetal_dt$program, fetal_dt$markers, sep = '|'), levels = row_levels)
-fetal_dt$program = factor(fetal_dt$program, levels = progs_)
-fetal_dt$cell_type = factor(fetal_dt$cell_type, levels = names(ct_groups))
-fetal_dt$group = factor(ct_groups[as.character(fetal_dt$cell_type)], levels = unique(ct_groups))
+genes_dt$row_id = factor(paste(genes_dt$program, genes_dt$markers, sep = '|'), levels = row_levels)
+genes_dt$avg_id = factor(paste(genes_dt$program, 'Average', sep = '|'), levels = row_levels)     # row of the program-average square
+genes_dt$program = factor(genes_dt$program, levels = progs_)
+genes_dt$cell_type = factor(genes_dt$cell_type, levels = names(ct_groups))
+genes_dt$group = factor(ct_groups[as.character(genes_dt$cell_type)], levels = unique(ct_groups))
 
-## step 5.6: dot plot (gradient = normalized expression, size = % cells, square = program average, red frame = best match) ####
+## step 5.5: dot plot (circles: gradient = mean expression in expressing cells, size = % cells; squares: program average, black = best match) ####
 
-p_ = ggplot(fetal_dt, aes(x = cell_type, y = row_id, color = norm_expr, size = 100*pct, shape = row_type))+
-  geom_point()+
-  geom_point(data = fetal_dt[fetal_dt$best,], shape = 0, size = 5, stroke = 0.8, color = 'red3', show.legend = FALSE)+
-  scale_shape_manual(values = c(gene = 16, average = 15), guide = 'none')+
-  scale_color_gradient(low = 'grey90', high = 'black', limits = c(0, 1), name = 'Normalized\nexpression\n(per gene)')+
-  scale_size(range = c(0.3, 4), limits = c(0, 100), name = '% cells')+
-  scale_y_discrete(labels = function(x){ sub('^.*\\|', '', x) })+
-  facet_grid(program ~ group, scales = 'free', space = 'free', labeller = labeller(group = function(x){ sapply(sub('^Cap mesenchyme$', 'Cap mesen- chyme', x), function(v){ paste(strwrap(v, 6), collapse = '\n') }) }))+
-  labs(title = 'NMF programs mapped to fetal kidney', x = 'Fetal kidney developmental subset', y = 'Top 5 NMF program genes')+
-  theme_bw()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        axis.text.y = element_text(face = 'italic', size = 8),
-        strip.text.x = element_text(size = 7),
-        strip.text.y = element_text(angle = 0, hjust = 0),
-        panel.grid.minor = element_blank(),
-        panel.spacing = unit(1, 'mm'))
+genes_dt$pct[genes_dt$pct == 0] = NA     # no circle where no cell expresses the gene
+p_ =  ggplot(genes_dt, aes(x = cell_type))+
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+            axis.text.y = element_text(face = 'italic', size = 8),
+            strip.text.x = element_text(size = 7),
+            strip.text.y = element_text(angle = 0, hjust = 0),
+            panel.grid.minor = element_blank(),
+            panel.spacing = unit(1, 'mm'))+
+      geom_point(aes(y = avg_id), shape = 15, size = 3, color = ifelse(genes_dt$best, 'green2', 'grey70'))+     # program average: same size for all, black = best match; drawn first so the average row stays at the bottom
+      geom_point(aes(y = row_id, color = expr, size = 100*pct), na.rm = T)+
+      scale_color_gradientn(colors = c('grey89','blue','red'), name = 'Mean expression in\nexpressing cells')+
+      scale_radius(range = c(1, 4), limits = c(0, 100), breaks = c(25, 50, 75, 100), name = '% cells')+     # dot radius grows linearly with percent of cells (0% -> 1, 100% -> 4)
+      scale_y_discrete(labels = function(x){ sub('^.*\\|', '', x) })+
+      facet_grid(program ~ group, scales = 'free', space = 'free', labeller = labeller(group = function(x){ sapply(x, function(v){ paste(strwrap(v, 6), collapse = '\n') }) }))+
+      labs(title = 'NMF programs mapped to fetal kidney cell types', x = 'Fetal kidney cell types', y = 'Top 5 NMF program genes')
 
 ggsave(filename = file.path(outdir_, 'NMF_programs_fetal_kidney_dotplot.pdf'), plot = p_, width = 10, height = 13)
 

@@ -63,7 +63,7 @@ if(!file.exists(file.path(indir_, paste0(fl_nm,'.RData'))))
                         prop = 0.4,         # proportion of cells to start with for sampling (usually 0.1 - 0.2 is sufficient
                         k = k_,             # the k to use for KNN refinement (they recommend using the same k used for KNN graph building)
                         d = d_,             # the number of reduced dimensions to use for KNN refinement (they recommend using the same d used for KNN graph building)
-                        refined = TRUE)     # indicates whether you want to use the sampling refinement algorithm, or just pick cells at random. The default
+                        refined = T)     # indicates whether you want to use the sampling refinement algorithm, or just pick cells at random. The default
                                             # and recommended way to go is to use refinement. The only situation in which you might consider using random instead, is if you
                                             # have batch corrected your data with a graph-based correction algorithm, such as BBKNN, but the results of DA testing will be suboptimal
                                             # milo_obj@nhoods: is a subset of KNN mtrix with #cells rows by (~prop* #cells) columns; prop is the starting point and could be changed by the algorithm

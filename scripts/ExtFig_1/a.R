@@ -25,7 +25,6 @@ s_objs$cell_type = sub('^blastema [1-3]$', 'blastema', as.character(s_objs$cell_
 
 Idents(s_objs) = as.factor(s_objs$cell_type)
 markers_ = FindAllMarkers(s_objs, only.pos = T, assay = 'RNA', min.pct = 0.07, logfc.threshold = 0.40)
-write.csv(markers_, file.path(outdir_, 'DGEA_malignant_cell_types.csv'), row.names = F)
 rm(s_objs); gc()
 
 # STEP 2: Canonical fetal markers found by the DGEA ####
@@ -51,10 +50,7 @@ genes_ = lapply(names(canonical_), function(g_)
   x_$gene[order(match(x_$gene, canonical_[[g_]]))]     # literature order
 })
 names(genes_) = names(canonical_)
-selected_ = markers_[markers_$gene %in% unlist(genes_),]
-selected_$group = rep(names(genes_), lengths(genes_))[match(selected_$gene, unlist(genes_))]
-write.csv(selected_, file.path(outdir_, 'canonical_fetal_markers_selected.csv'), row.names = F)
-rm(markers_, selected_)
+rm(markers_)
 
 # STEP 3: Mean expression and percent of expressing cells per fetal cell type ####
 
@@ -88,16 +84,16 @@ df_$lineage = factor(ifelse(df_$cell_type %in% blastema_, 'Blastema', ifelse(df_
                      levels = c('Blastema','Early nephron\nepithelium','Stroma'))
 df_$gene = factor(df_$gene, levels = unlist(genes_))
 df_$cell_type = factor(df_$cell_type, levels = rev(ct_order))
-write.csv(df_, file.path(outdir_, 'canonical_fetal_markers_expression_by_fetal_cell_type.csv'), row.names = F)
 rm(avg_, pct_)
 
 # STEP 4: Plotting ####
 
+df_$pct[df_$pct == 0] = NA     # no circle where no cell expresses the gene
 p_ = ggplot(df_, aes(x = gene, y = cell_type))+
-  geom_point(aes(size = pct, color = avg_expr))+
+  geom_point(aes(size = pct, color = avg_expr), na.rm = T)+
   facet_grid(lineage ~ group, scales = 'free', space = 'free')+
   scale_color_gradientn(colors = c('grey89','blue','red'), name ='Mean expression in\nexpressing cells')+
-  scale_size_continuous(range = c(0.5, 6), limits = c(0, 100), breaks = c(0, 25, 50, 75), name = '% cells')+
+  scale_radius(range = c(0, 6), limits = c(0, 100), breaks = c(25, 50, 75), name = '% cells')+     # dot radius proportional to percent of cells, as in Seurat's DotPlot
   labs(title = 'Fetal kidney expression of malignant cell type markers', x = NULL, y = NULL)+
   theme_bw(base_size = 12)+
   theme(plot.title = element_text(hjust = 0.5, face = 'bold'),

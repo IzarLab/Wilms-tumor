@@ -6,7 +6,6 @@ library(ggplot2)
 library(Seurat)
 options(Seurat.object.assay.version = "v3")
 library(dplyr)
-library(tidyr)
 library(rstatix)
 library(scales)
 
@@ -35,8 +34,16 @@ markers_sub = FindAllMarkers(s_objs, only.pos = T, assay = 'RNA', min.pct = 0.07
 
 ## step 2.2: top 10 markers per subcompartment, from genes detected in at least 25% of cells of the subcompartment (pct.1) or of all other cells (pct.2) ####
 
+# protein-coding genes: current and old (alias) HGNC symbols of protein-coding genes in org.Hs.eg.db (the data uses some old symbols, e.g. H2AFZ)
+gt_ = AnnotationDbi::toTable(org.Hs.eg.db::org.Hs.egGENETYPE)
+sym_ = AnnotationDbi::toTable(org.Hs.eg.db::org.Hs.egSYMBOL)
+alias_ = AnnotationDbi::toTable(org.Hs.eg.db::org.Hs.egALIAS2EG)
+pc_ids = gt_$gene_id[gt_$gene_type %in% 'protein-coding']
+pc_ = unique(c(sym_$symbol[sym_$gene_id %in% pc_ids], alias_$alias_symbol[alias_$gene_id %in% pc_ids]))
+rm(gt_, sym_, alias_, pc_ids)
+
 top10_sub = markers_sub %>%
-            filter(!grepl(x = gene, pattern = '(^LINC)|(^A\\w+\\.\\w)')) %>%     # lncRNA exclusion
+            filter(gene %in% pc_) %>%     # only protein-coding genes (drops lncRNAs and other non-coding genes)
             filter(pmax(pct.1, pct.2) >= 0.25) %>%
             group_by(cluster) %>%
             arrange(desc(avg_log2FC), .by_group = T) %>%
@@ -44,7 +51,7 @@ top10_sub = markers_sub %>%
             ungroup()
 write.csv(markers_sub, file.path(outdir_, 'all_markers_subcompartment.csv'), row.names = F)
 write.csv(top10_sub, file.path(outdir_, 'top10_markers_per_subcompartment.csv'), row.names = F)
-rm(markers_sub)
+rm(markers_sub, pc_)
 
 ## step 2.3: ordering subcompartments by hierarchical clustering of their average expression of the top markers ####
 
@@ -63,21 +70,33 @@ gene_order = top10_sub %>%
              pull(gene) %>%
              rev()
 
-## step 2.4: dot plot (all dots black: dot size alone encodes the percent of cells expressing the gene) ####
+## step 2.4: mean expression in expressing cells and percent of expressing cells per subcompartment ####
 
-p_dot = DotPlot(s_objs, features = gene_order, group.by = 'subcompartment', assay = 'RNA')
-p_dot$layers[[1]]$aes_params$colour = 'black'
-p_dot = p_dot+
-  coord_flip()+
-  labs(title = 'Top 10 markers per subcompartment', x = 'Markers', y = 'Subcompartment')+     # genes on the vertical axis after coord_flip()
-  guides(size = guide_legend(title = '% of cells\nexpressing'))+
+gene_order = unique(gene_order)
+mat_ = s_objs[['RNA']]@data[gene_order,]
+avg_ = sapply(group_order, function(s_){ x_ = mat_[, s_objs$subcompartment %in% s_]; Matrix::rowSums(x_)/pmax(Matrix::rowSums(x_ > 0), 1) })     # 0 if no cell expresses the gene
+pct_ = sapply(group_order, function(s_){ Matrix::rowMeans(mat_[, s_objs$subcompartment %in% s_] > 0)*100 })
+rm(mat_)
+dot_df = data.frame(gene = factor(rep(gene_order, times = length(group_order)), levels = gene_order),
+                    subcompartment = factor(rep(group_order, each = length(gene_order)), levels = group_order),
+                    avg_expr = as.vector(avg_), pct = as.vector(pct_))
+rm(avg_, pct_)
+
+## step 2.5: dot plot (dot fill = mean expression in expressing cells, black outline, dot size = percent of cells expressing the gene) ####
+
+dot_df$pct[dot_df$pct == 0] = NA     # no circle where no cell expresses the gene
+p_dot = ggplot(dot_df, aes(x = subcompartment, y = gene))+
+  geom_point(aes(size = pct, fill = avg_expr), shape = 21, color = 'black', na.rm = T)+     # shape 21: filled circle with a separate (black) outline
+  scale_fill_gradientn(colors = c('grey89','blue','red'), name = 'Mean expression in\nexpressing cells')+
+  scale_radius(range = c(1, 6), limits = c(0, 100), breaks = c(25, 50, 75, 100))+     # dot radius proportional to percent of cells, as in Seurat's DotPlot
+  labs(title = 'Top 10 markers per component', x = 'Component', y = 'Markers', size = '% of cells\nexpressing')+
   theme_bw(base_size = 12)+
   theme(plot.title = element_text(hjust = 0.5, face = 'bold'),
         axis.text.x = element_text(angle = 45, hjust = 1, face = 'bold'),
         axis.text.y = element_text(size = 8),
         panel.grid.major = element_line(color = 'grey90', linewidth = 0.2),
         panel.grid.minor = element_blank())
-ggsave(file.path(outdir_, 'dotplot_top10_markers_per_subcompartment_black.pdf'), p_dot, width = 5, height = 8)
+ggsave(file.path(outdir_, 'dotplot_top10_markers_per_subcompartment.pdf'), p_dot, width = 5, height = 8)
 
 # STEP 3: Per-sample subcompartment abundance by condition ####
 
@@ -122,4 +141,4 @@ p_box = ggplot(frac_df, aes(x = subcompartment, y = fraction, fill = condition))
   theme_classic(base_size = 14)+
   theme(plot.title = element_text(hjust = 0.5, face = 'bold'), axis.text.x = element_text(face = 'bold'), legend.title = element_blank())
 ggsave(file.path(outdir_, 'boxplot_subcompartment_fraction_by_condition_with_pvalues.pdf'), p_box, width = 8, height = 6)
-rm(p_dot, p_box, frac_df, stat_df, ypos_df, top10_sub); gc()
+rm(p_dot, dot_df, p_box, frac_df, stat_df, ypos_df, top10_sub); gc()

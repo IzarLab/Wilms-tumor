@@ -4,8 +4,8 @@
 
 library(ggplot2)
 library(Seurat)
-library(ggrepel)
 options(Seurat.object.assay.version = "v3")
+library(ggrepel)
 
 outdir_ = 'out/'
 if(!dir.exists(outdir_)){ dir.create(outdir_, recursive = T) }     # create the output directory only if it does not already exist
