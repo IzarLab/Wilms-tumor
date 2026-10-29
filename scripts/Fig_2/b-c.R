@@ -136,7 +136,7 @@ p_box = ggplot(frac_df, aes(x = subcompartment, y = fraction, fill = condition))
   geom_text(data = stat_df, aes(x = xmid, y = y.position*1.03, label = p_label), inherit.aes = F, size = 4)+
   scale_fill_manual(values = condition_cols)+
   scale_color_manual(values = condition_cols)+
-  scale_y_continuous(labels = percent_format(accuracy = 1), expand = expansion(mult = c(0.02, 0.18)))+
+  scale_y_continuous(labels = percent_format(accuracy = 1), breaks = seq(0, 1, 0.25), expand = expansion(mult = c(0.02, 0.18)))+     # ticks stop at 100%; headroom kept for the p-value brackets
   labs(title = 'Subcompartment abundance by condition', x = 'Subcompartment', y = 'Fraction of cells per sample')+
   theme_classic(base_size = 14)+
   theme(plot.title = element_text(hjust = 0.5, face = 'bold'), axis.text.x = element_text(face = 'bold'), legend.title = element_blank())
