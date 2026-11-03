@@ -12,7 +12,7 @@ wilms-tumor-plasticity/
 │   └── Misc/             # tables, per-sample NMF results and Milo objects
 ├── scripts/
 │   ├── Fig_1/ ... Fig_5/  # main figures
-│   └── ExtFig_1/, ExtFig_3/  # Extended Data figures
+│   └── ExtFig_1/ ... ExtFig_5/  # Extended Data figures
 ├── out/                  # created on first run; all figures are written here
 └── README.md
 ```
@@ -72,8 +72,9 @@ Rscript scripts/Fig_2/b-c.R
 | `Fig_2/e.R` | 2e | Top 5 genes of each NMF program; color = mean expression in expressing cells of the program's cell type, size = NMF weight | cancer object, `NMF_W*.RData`, `programs_annotation_processed.tsv` | `NMF_program_markers_dotplot.pdf` |
 | `Fig_2/f.R` | 2f | Maps NMF programs to fetal kidney cell types by overlap of program genes and fetal markers (overlap coefficient, hypergeometric test) | fetal object, `NMF_W*.RData`, `programs_annotation_processed.tsv` | `NMF_programs_fetal_kidney_overlap_dotplot.pdf` |
 | `Fig_3/a.R` | 3a | Chromosome-arm CNV state and CNV burden per subcompartment in untreated samples | `ALL_samples_*.tsv` | `Wilms_UNTREATED_compact_PanelE_left_PanelC_right.pdf/.png` |
-| `Fig_3/b-c.R` | 3b, 3c | Monocle3 trajectory of untreated malignant cells, rooted at the most potent cell type (CytoTRACE 2), and pseudotime by subcompartment | cancer object | `UMAP_monocle3_trajectory_untreated.pdf`, `boxplot_pseudotime_by_subcompartment.pdf`, `CytoTRACE2_pct_potent_per_celltype.csv` |
+| `Fig_3/b-c.R` | 3b, 3c | Monocle3 trajectory of untreated malignant cells, rooted at the most potent cell type (CytoTRACE 2), and pseudotime of blastema 1-3, stroma and epithelium | cancer object | `UMAP_monocle3_trajectory_untreated.pdf`, `boxplot_pseudotime_by_subcompartment.pdf`, `CytoTRACE2_pct_potent_per_celltype.csv` |
 | `Fig_4/a.R` | 4a | UMAP of the malignant compartment colored by cell type | cancer object | `malignant_compartment_umap.pdf/.png` |
+| `Fig_4/a_DGEA.R` | 4a (table) | DGEA between all 19 malignant cell types, including S/G2M cells (each against all others; `min.pct = 0.07`, `logfc.threshold = 0.40`) | cancer object | `DGEA_cancer_cell_types.csv` |
 | `Fig_4/b.R` | 4b | Milo differential abundance of malignant cell neighborhoods, neoadjuvant vs untreated | cancer object, `Milo_DA_k30_d30_prop0.4_cancer.RData` | `Milo_DA_k30_d30_prop0.4_cancer_*_UMAP.pdf`, `Milo_DA_k30_d30_prop0.4_cancer_stats.pdf` |
 | `Fig_4/c.R` | 4c | Ternary density plot of treated malignant cells by fetal blastema, epithelium and stroma signature scores | cancer object, fetal marker tables | `cancer_density_plasticity.pdf`, `cancer_density_plasticity_subcompartments.pdf` |
 | `Fig_4/d.R` | 4d | Joint Monocle3 trajectory of untreated and treated cells, colored by treatment enrichment | cancer object | `joint_trajectory_condition_enrichment.pdf`, `joint_trajectory_celltype_enrichment.csv`, `CytoTRACE2_pct_potent_per_celltype_joint.csv` |
@@ -83,11 +84,26 @@ Rscript scripts/Fig_2/b-c.R
 | `Fig_5/c.R` | 5c | Milo differential abundance of lymphoid neighborhoods | lymphoid object, `Milo_DA_k30_d30_prop0.4_lymphoid.RData` | `Milo_DA_k30_d30_prop0.4_lymphoid_*` |
 | `Fig_5/e.R` | 5e | Milo differential abundance of myeloid neighborhoods | myeloid object, `Milo_DA_k30_d30_prop0.4_myeloid.RData` | `Milo_DA_k30_d30_prop0.4_myeloid_*` |
 | `Fig_5/g.R` | 5g | Milo differential abundance of vascular neighborhoods | vasculature object, `Milo_DA_k30_d30_prop0.4_vasculature.RData` | `Milo_DA_k30_d30_prop0.4_vasculature_*` |
-| `ExtFig_1/a.R` | ED 1a | Canonical fetal markers selected from a DGEA between malignant cell types, plotted across fetal kidney cell types | cancer and fetal objects | `fetal_markers_dotplot.pdf` |
-| `ExtFig_1/b.R` | ED 1b | Maps malignant cell types to fetal kidney cell types by marker overlap (overlap coefficient, hypergeometric test) | cancer and fetal objects | `malignant_cell_types_fetal_kidney_overlap_dotplot.pdf` |
-| `ExtFig_1/f-g.R` | ED 1f, 1g | UMAPs of the fetal kidney nephron and stroma components | fetal object | `fetal_nephron.pdf`, `fetal_stroma.pdf` |
+| `ExtFig_1/d-e.R` | ED 1d, 1e | UMAPs of the fetal kidney nephron and stroma components | fetal object | `fetal_nephron.pdf`, `fetal_stroma.pdf` |
+| `ExtFig_1/f.R` | ED 1f | Canonical fetal markers selected from a DGEA between malignant cell types, plotted across fetal kidney cell types | cancer and fetal objects | `fetal_markers_dotplot.pdf` |
+| `ExtFig_1/g.R` | ED 1g | Maps malignant cell types to fetal kidney cell types by marker overlap (overlap coefficient, hypergeometric test) | cancer and fetal objects | `malignant_cell_types_fetal_kidney_overlap_dotplot.pdf` |
+| `ExtFig_2/a.R` | ED 2a | Blastema, stroma and epithelium (subcompartment) proportion per sample | cancer object | `malignant_subcompartment_proportion_per_sample.pdf` |
+| `ExtFig_2/b.R` | ED 2b | Lymphoid cell type proportion per sample (colors of Fig. 5b) | lymphoid object | `lymphoid_cell_type_proportion_per_sample.pdf` |
+| `ExtFig_2/c.R` | ED 2c | Myeloid cell type proportion per sample (colors of Fig. 5d) | myeloid object | `myeloid_cell_type_proportion_per_sample.pdf` |
+| `ExtFig_2/d.R` | ED 2d | Vasculature cell type proportion per sample (colors of Fig. 5f) | vasculature object | `vasculature_cell_type_proportion_per_sample.pdf` |
+| `ExtFig_2/e.R` | ED 2e | DGEA between lymphoid cell types (`min.pct = 0.09`, `logfc.threshold = 0.40`) and dot plot of the top 5 protein-coding markers per cell type | lymphoid object | `DGEA_lymphoid_cell_types.csv`, `dotplot_top5_markers_per_lymphoid_cell_type.pdf` |
+| `ExtFig_2/f.R` | ED 2f | As `e.R`, for myeloid cell types | myeloid object | `DGEA_myeloid_cell_types.csv`, `dotplot_top5_markers_per_myeloid_cell_type.pdf` |
+| `ExtFig_2/g.R` | ED 2g | As `e.R`, for vasculature cell types | vasculature object | `DGEA_vasculature_cell_types.csv`, `dotplot_top5_markers_per_vasculature_cell_type.pdf` |
 | `ExtFig_3/a.R` | ED 3a | Scaled pseudotime per cell type and condition (joint trajectory of Fig. 4d) | cancer object | `joint_pseudotime_by_celltype_condition.pdf` |
 | `ExtFig_3/b.R` | ED 3b | Scaled pseudotime per cell type and regimen (treated trajectory of Fig. 4e) | cancer object, `cohort.tsv` | `treated_pseudotime_by_celltype_regimen.pdf` |
+| `ExtFig_4/a.R` | ED 4a | Cell group composition (blastema 1-3, myogenic precursors, stromal, epithelial) per treated sample, by tumor-burden response | cancer object, `cohort.tsv` | `cell_group_composition_per_sample_by_response.pdf` |
+| `ExtFig_4/b.R` | ED 4b | Plasticity metrics per sample, responders vs non-responders (Wilcoxon) | cancer object, `cohort.tsv` | `plasticity_metrics_by_response.pdf` |
+| `ExtFig_4/c.R` | ED 4c | Cell type composition heatmap per treated sample, by response | cancer object, `cohort.tsv` | `cell_type_composition_heatmap_by_response.pdf` |
+| `ExtFig_4/d.R` | ED 4d | Plasticity log-ratio by regimen and response | cancer object, `cohort.tsv` | `plasticity_log_ratio_by_regimen_and_response.pdf` |
+| `ExtFig_4/e.R` | ED 4e | Resistance log-ratio by histology and response | cancer object, `cohort.tsv` | `resistance_log_ratio_by_histology_and_response.pdf` |
+| `ExtFig_4/f.R` | ED 4f | Blastema 1-3 fraction by response category (decreased, unchanged, increased tumor burden) | cancer object, `cohort.tsv` | `blastema_fraction_by_response_category.pdf` |
+| `ExtFig_4/g.R` | ED 4g | Mean cell group composition of non-responders and responders | cancer object, `cohort.tsv` | `mean_cell_group_composition_by_response.pdf` |
+| `ExtFig_5/a.R` | ED 5a | Lymphoid, myeloid and vasculature proportion within the nonmalignant TME per sample | `TME.RData` | `TME_subcompartment_proportion_per_sample.pdf` |
 
 "cancer object" is `integrated_compartment_cancer_processed.RData` and "fetal object" is `Fetal_kideny_processed.RData`.
 
@@ -98,6 +114,13 @@ Rscript scripts/Fig_2/b-c.R
 - **`Fig_2/4_NMF_program_heatmap.R`** is an upstream step, not a figure script. It builds the Jaccard similarity matrix and the
   unannotated program table (`programs_annotation.tsv`) from the per-sample NMF and GSEA outputs, which are not part of this
   repository. Its annotated output, `programs_annotation_processed.tsv`, is provided in `data/Misc/`.
+- **Blastema** has two definitions. Fig. 2b, Fig. 3a, Fig. 4c and Extended Data Fig. 2a use the `subcompartment` annotation of the
+  cancer object, whose blastema also includes smooth myocyte-like precursors and PAX3+ myogenic precursors. Extended Data Fig. 4
+  uses four cell groups from the `cell_type` annotation: blastema 1-3 (blastema 1-3 and their S/G2M cells); myogenic precursors
+  (smooth myocyte-like precursors and their G2M cells, PAX3+ myogenic precursors); stromal (nascent smooth myocyte-like, smooth
+  myocyte-like and their S/G2M cells, myoblast-like, striated myocyte-like); and epithelial (tubules and their S/G2M cells,
+  podocyte-like). Responders have decreased tumor burden; non-responders have unchanged or increased tumor burden (`cohort.tsv`).
+- **DGEA** scripts use Seurat's `FindAllMarkers` on the RNA assay (log-normalized data); presto must be installed for speed.
 - **CytoTRACE 2** is called as `CytoTRACE2::cytotrace2()` and not attached, because attaching it masks `dplyr` verbs.
 - Scripts ending in `_old.R` are earlier versions kept for reference; they are not needed to reproduce the figures.
 
