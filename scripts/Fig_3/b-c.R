@@ -1,5 +1,6 @@
 # This script orders untreated malignant cell types by developmental potential (CytoTRACE 2), uses the centroid of the most
-# potent cell type as root of Monocle3 pseudotime and plots the Monocle3 trajectory tree on the UMAP
+# potent cell type as root of Monocle3 pseudotime, plots the Monocle3 trajectory tree on the UMAP (panel b) and the pseudotime of blastema 1-3
+# and of the stroma and epithelium subcompartments as box plots (panel c)
 # Run from the root of the repository: Rscript scripts/Fig_3/b-c.R
 
 library(ggplot2)
@@ -157,9 +158,9 @@ box_dt$group = factor(tools::toTitleCase(box_dt$group), levels = c('Blastema 1',
 ## step 6.2: boxplot ####
 
 p_box = ggplot(box_dt, aes(x = group, y = pseudotime, fill = group))+
-  geom_boxplot(outlier.size = 0.2, width = 0.7, alpha = 0.65, color = 'grey30')+
-  scale_fill_manual(values = c('Blastema 1' = '#E64B35', 'Blastema 2' = '#F39B7F', 'Blastema 3' = '#B2331F', Epithelium = '#00A087', Stroma = '#4DBBD5'), guide = 'none')+
-  labs(title = 'Pseudotime by malignant subcompartment', x = NULL, y = 'Pseudotime')+
+  geom_boxplot(outlier.size = 0.2, width = 0.7, color = 'grey30')+
+  scale_fill_manual(values = c('Blastema 1' = 'darkred', 'Blastema 2' = 'red', 'Blastema 3' = 'red', Epithelium = 'blue', Stroma = 'green3'), guide = 'none')+     # colors of Fig. 2a; blastema 1 (root) darker
+  labs(title = 'Pseudotime by malignant component', x = NULL, y = 'Pseudotime')+
   theme_classic()+
   theme(axis.text = element_text(size = 12, color = 'black'), axis.title.y = element_text(size = 13))
 

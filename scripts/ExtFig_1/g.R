@@ -1,6 +1,6 @@
 # This script maps malignant cell types to fetal kidney cell types by the overlap between the DGEA markers of each malignant cell type and
 # the DGEA markers of each fetal kidney cell type (overlap coefficient and hypergeometric test), as in Fig. 2f
-# Run from the root of the repository: Rscript scripts/ExtFig_1/b.R
+# Run from the root of the repository: Rscript scripts/ExtFig_1/g.R
 
 library(ggplot2)
 library(Seurat)

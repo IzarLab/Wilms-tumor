@@ -1,7 +1,7 @@
 # This script selects canonical fetal kidney markers from a DGEA between malignant cell types (blastema 1-3 merged, tubules, podocyte-like,
 # smooth myocyte-like, striated myocyte-like) and plots their expression in each fetal kidney cell type as a dot plot
 # (dot color = mean expression across expressing cells, dot size = percent of cells expressing the gene)
-# Run from the root of the repository: Rscript scripts/ExtFig_1/a.R
+# Run from the root of the repository: Rscript scripts/ExtFig_1/f.R
 
 library(ggplot2)
 library(Seurat)

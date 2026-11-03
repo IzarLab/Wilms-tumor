@@ -1,5 +1,5 @@
 # This script plots the UMAPs of the fetal kidney nephron and stroma components (kidney cell atlas)
-# Run from the root of the repository: Rscript scripts/ExtFig_1/f-g.R
+# Run from the root of the repository: Rscript scripts/ExtFig_1/d-e.R
 
 library(Seurat)
 options(Seurat.object.assay.version = "v3")

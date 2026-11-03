@@ -2,6 +2,7 @@
 # and stroma, and superimposes density contour on them. In other words, each cell is assigned three coordinates
 # (x = blastema, y = epithelium, z = stroma). These coordinates dictate their positions.
 # The script uses ggtern package that uses a 2D kernel density estimation using kde2d and display the results with contours.
+# A second diagram shows the same cells colored by tumor subcompartment.
 # Run from the root of the repository: Rscript scripts/Fig_4/c.R
 
 library(ggplot2)
