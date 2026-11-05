@@ -6,7 +6,7 @@ produces one figure panel (or a few related panels) from processed Seurat object
 ## Repository structure
 
 ```
-wilms-tumor-plasticity/
+Wilms-tumor/
 ├── data/
 │   ├── compartments/     # processed Seurat objects (.RData)
 │   └── Misc/             # tables, per-sample NMF results and Milo objects
@@ -21,6 +21,8 @@ Script names follow the panels they generate, e.g. `scripts/Fig_2/b-c.R` makes F
 makes Fig. 5b, 5d and 5f.
 
 ## Input data
+
+The input files are available on Zenodo (https://doi.org/10.5281/zenodo.23113291). Place them in `data/` as listed below.
 
 Seurat objects in `data/compartments/`:
 
@@ -39,7 +41,9 @@ Tables and intermediate results in `data/Misc/`:
 |------|---------|
 | `cohort.tsv` | Patient clinical metadata, including neoadjuvant regimen |
 | `FGA_TMB.tsv` | Fraction of genome altered and tumor mutational burden per patient |
-| `ALL_samples_*.tsv` | Copy-number (CNV) tables per sample, chromosome arm and cell |
+| `ALL_samples_average_CNV_by_state_arm.tsv` | Mean Numbat CNV state per sample, subcompartment and chromosome arm |
+| `ALL_samples_samplewise_arm_level_stats.tsv` | Per-sample chromosome-arm CNV statistics |
+| `ALL_samples_cell_level_CNV_metadata.tsv` | Cell-level CNV burden (from Numbat) with malignant cell metadata |
 | `NMF_W*.RData` | Per-sample NMF results |
 | `Jaccard_similarity_matrix_programs.tsv` | Jaccard similarity between NMF factors |
 | `programs_annotation_processed.tsv` | Manually annotated NMF programs (factor-sample pairs) |
@@ -71,7 +75,7 @@ Rscript scripts/Fig_2/b-c.R
 | `Fig_2/d.R` | 2d | Jaccard similarity heatmap of NMF factors clustered into programs | `Jaccard_similarity_matrix_programs.tsv`, `programs_annotation_processed.tsv` | `SOM_NMF_programs_cleaned.pdf` |
 | `Fig_2/e.R` | 2e | Top 5 genes of each NMF program; color = mean expression in expressing cells of the program's cell type, size = NMF weight | cancer object, `NMF_W*.RData`, `programs_annotation_processed.tsv` | `NMF_program_markers_dotplot.pdf` |
 | `Fig_2/f.R` | 2f | Maps NMF programs to fetal kidney cell types by overlap of program genes and fetal markers (overlap coefficient, hypergeometric test) | fetal object, `NMF_W*.RData`, `programs_annotation_processed.tsv` | `NMF_programs_fetal_kidney_overlap_dotplot.pdf` |
-| `Fig_3/a.R` | 3a | Chromosome-arm CNV state and CNV burden per subcompartment in untreated samples | `ALL_samples_*.tsv` | `Wilms_UNTREATED_compact_PanelE_left_PanelC_right.pdf/.png` |
+| `Fig_3/a.R` | 3a | Chromosome-arm CNV state and CNV burden per subcompartment in untreated samples | `ALL_samples_average_CNV_by_state_arm.tsv`, `ALL_samples_samplewise_arm_level_stats.tsv`, `ALL_samples_cell_level_CNV_metadata.tsv` | `Wilms_UNTREATED_compact_PanelE_left_PanelC_right.pdf/.png` |
 | `Fig_3/b-c.R` | 3b, 3c | Monocle3 trajectory of untreated malignant cells, rooted at the most potent cell type (CytoTRACE 2), and pseudotime of blastema 1-3, stroma and epithelium | cancer object | `UMAP_monocle3_trajectory_untreated.pdf`, `boxplot_pseudotime_by_subcompartment.pdf`, `CytoTRACE2_pct_potent_per_celltype.csv` |
 | `Fig_4/a.R` | 4a | UMAP of the malignant compartment colored by cell type | cancer object | `malignant_compartment_umap.pdf/.png` |
 | `Fig_4/a_DGEA.R` | 4a (table) | DGEA between all 19 malignant cell types, including S/G2M cells (each against all others; `min.pct = 0.07`, `logfc.threshold = 0.40`) | cancer object | `DGEA_cancer_cell_types.csv` |
@@ -111,9 +115,10 @@ Rscript scripts/Fig_2/b-c.R
 
 - **Milo scripts** (`Fig_4/b.R`, `Fig_5/c.R`, `Fig_5/e.R`, `Fig_5/g.R`) read the Milo object from `data/Misc/` if it exists.
   Otherwise they build the neighborhoods and save the object there, which takes much longer.
-- **`Fig_2/4_NMF_program_heatmap.R`** is an upstream step, not a figure script. It builds the Jaccard similarity matrix and the
-  unannotated program table (`programs_annotation.tsv`) from the per-sample NMF and GSEA outputs, which are not part of this
-  repository. Its annotated output, `programs_annotation_processed.tsv`, is provided in `data/Misc/`.
+- **NMF upstream steps** (per-sample factorization, enrichment of factors, Jaccard similarity of factors and manual annotation of
+  programs) are not part of this repository. Their outputs, `NMF_W*.RData`, `Jaccard_similarity_matrix_programs.tsv` and
+  `programs_annotation_processed.tsv`, are provided in `data/Misc/`.
+- **CNV tables** in `data/Misc/` were derived from per-sample Numbat runs, which are not part of this repository.
 - **Blastema** has two definitions. Fig. 2b, Fig. 3a, Fig. 4c and Extended Data Fig. 2a use the `subcompartment` annotation of the
   cancer object, whose blastema also includes smooth myocyte-like precursors and PAX3+ myogenic precursors. Extended Data Fig. 4
   uses four cell groups from the `cell_type` annotation: blastema 1-3 (blastema 1-3 and their S/G2M cells); myogenic precursors
