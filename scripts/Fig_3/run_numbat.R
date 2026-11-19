@@ -2,7 +2,7 @@
 
 # Run haplotype-aware CNV inference for one Wilms tumor sample.
 #
-# Please change the path.
+# Please change the path and provide associated input files as required. The provided files are just for reference.
 #
 # Typical Usage from the repository root
 #   Rscript scripts/Fig_3/run_numbat.R \
