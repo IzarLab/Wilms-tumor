@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 
 # Summarize first-iteration Numbat posteriors.
-# Please change the path.
+# Please change the path and provide associated input files as required. The provided files are just for reference.
+#
 #
 # Typical Usage from the repository root
 #   Rscript scripts/Fig_3/summarize_cnv.R \
